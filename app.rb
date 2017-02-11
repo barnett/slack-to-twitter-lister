@@ -16,7 +16,6 @@ end
 
 slack_client = Slack::Web::Client.new(token: SLACK_USER_TOKEN)
 
-# Update Users
 users = []
 deleted_users = []
 slack_client.users_list.members.each do |user|

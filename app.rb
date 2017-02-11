@@ -22,7 +22,7 @@ slack_client.users_list.members.each do |user|
   new_user = User.new
   new_user.slack_id = user.id
   new_user.slack_name = user.name
-  new_user.twitter_handle = slack_client.users_profile_get(user: user.id).profile.fields.to_h.try(:[], SLACK_TWITTER_PROFILE_ID).try(:[], 'value')
+  new_user.twitter_handle = slack_client.users_profile_get(user: user.id).profile.fields.to_h.dig(SLACK_TWITTER_PROFILE_ID, 'value')
 
   ary = user.deleted ? deleted_users : users
 

@@ -10,23 +10,23 @@ TWITTER_ACCESS_TOKEN = 'XXXX'
 TWITTER_ACCESS_SECRET = 'XXXX'
 TWITTER_LIST_ID = 12345
 
-class User
-  attr_accessor :slack_id, :slack_name, :twitter_handle
-end
-
 slack_client = Slack::Web::Client.new(token: SLACK_USER_TOKEN)
 
 users = []
 deleted_users = []
 slack_client.users_list.members.each do |user|
-  new_user = User.new
-  new_user.slack_id = user.id
-  new_user.slack_name = user.name
-  new_user.twitter_handle = slack_client.users_profile_get(user: user.id).profile.fields.to_h.dig(SLACK_TWITTER_PROFILE_ID, 'value')
+  twitter_handle = slack_client.users_profile_get(user: user.id)
+                               .profile
+                               .fields
+                               .to_h
+                               .dig(SLACK_TWITTER_PROFILE_ID, 'value')
+                               &.gsub('@','')
+
+  next unless twitter_handle.present?
 
   ary = user.deleted ? deleted_users : users
 
-  ary << new_user
+  ary << twitter_handle
 end
 
 twitter_client = Twitter::REST::Client.new do |config|
@@ -36,5 +36,11 @@ twitter_client = Twitter::REST::Client.new do |config|
   config.access_token_secret = TWITTER_ACCESS_SECRET
 end
 
-twitter_client.add_list_members(TWITTER_LIST_ID, users.map(&:twitter_handle).compact)
-twitter_client.remove_list_members(TWITTER_LIST_ID, deleted_users.map(&:twitter_handle).compact)
+current_list_members = twitter_client.list_members(TWITTER_LIST_ID).map(&:screen_name)
+
+users_to_add = users.select do |user_twitter_handle|
+  current_list_members.exclude? user_twitter_handle
+end
+
+twitter_client.add_list_members(TWITTER_LIST_ID, users_to_add)
+twitter_client.remove_list_members(TWITTER_LIST_ID, deleted_users)

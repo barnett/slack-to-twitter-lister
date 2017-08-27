@@ -1,3 +1,5 @@
+Keep a Twitter list up to date by using your slack team directory
+
 ### What does this do?
 1. Imports a custom column for each slack user
 2. Adds active users to a twitter list
